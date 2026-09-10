@@ -1,0 +1,25 @@
+STARFALL PROPRIETARY LICENSE
+Copyright (c) 2026 JXN / the copyright owner of this repository.
+
+1. OWNERSHIP
+All source code, game logic, artwork generated in code, UI, text, names, designs, and other original materials in the Starfall project (the “Software”) are proprietary and remain the property of the copyright owner.
+
+2. NO PUBLIC LICENSE
+The Software is NOT open source and is NOT granted under the MIT, Apache, GPL, BSD, or any other open-source license.
+
+3. RESTRICTIONS
+Without prior written permission from the copyright owner, you may not copy, reproduce, redistribute, publish, sell, sublicense, modify for redistribution, re-host as your own project, or create a substantially similar public derivative from the Software or its original assets.
+
+4. PRIVATE VIEWING
+You may view the source code on GitHub for reference, but viewing the repository does not grant permission to reuse or redistribute the Software.
+
+5. NO WARRANTY
+The Software is provided as-is. The copyright owner is not responsible for damages arising from its use.
+
+6. ENFORCEMENT
+Unauthorized use may constitute copyright infringement or other unlawful use depending on the applicable law and facts. The copyright owner reserves all rights and remedies available under applicable law.
+
+7. PERMISSION
+Requests for permission to use, reproduce, modify, or redistribute the Software must be made directly to the copyright owner and must receive explicit written approval before such use.
+
+THIS LICENSE DOES NOT REPLACE LEGAL ADVICE. Copyright ownership and enforcement depend on applicable law and the facts of a particular dispute.
