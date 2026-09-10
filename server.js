@@ -31,7 +31,6 @@ async function safeUrl(raw) {
   const u = new URL(raw);
   if (!['http:', 'https:'].includes(u.protocol)) throw new Error('Only HTTP and HTTPS websites are supported.');
   if (isPrivateHost(u.hostname)) throw new Error('Private network addresses are not allowed.');
-
   try {
     const records = await dns.lookup(u.hostname, { all: true });
     if (records.some(r => isPrivateHost(r.address))) throw new Error('Private network addresses are not allowed.');
@@ -75,11 +74,9 @@ function proxyUrl(value, base) {
 
 function rewritePage(html, target) {
   const base = target.href;
-
   html = html.replace(/<base[^>]*>/gi, '');
   html = html.replace(/<head([^>]*)>/i, '<head$1><base href="' + target.origin + '/">');
 
-  // Keep resources on the original site, but route normal navigation back through Steller.
   html = html.replace(/\s(href|action)\s*=\s*(["'])(.*?)\2/gi, (all, attr, quote, value) => {
     if (/^(#|javascript:|mailto:|tel:|data:|blob:)/i.test(value.trim())) return all;
     const absolute = absoluteUrl(value.trim(), base);
@@ -88,14 +85,12 @@ function rewritePage(html, target) {
     return ' ' + attr + '=' + quote + proxyUrl(value.trim(), base) + quote;
   });
 
-  // Route common clickable media/document links through the viewer too.
-  html = html.replace(/\s(src)\s*=\s*(["'])(.*?)\2/gi, (all, attr, quote, value) => {
-    if (/^(data:|blob:|javascript:)/i.test(value.trim())) return all;
-    return all;
-  });
-
-  // Prevent a proxied page from replacing the entire browser tab.
+  // A proxied page is already inside Steller, so links must not create new browser tabs.
+  html = html.replace(/\s(target)\s*=\s*(["'])(?:_blank|_parent|_top)\2/gi, '');
   html = html.replace(/<head([^>]*)>/i, '<head$1><style>html{scroll-behavior:smooth}</style>');
+
+  // Stop common page scripts from intentionally opening a separate top-level window.
+  html = html.replace(/<head([^>]*)>/i, '<head$1><script>try{window.open=function(url){if(url)location.href=url;return window};}catch(e){}</script>');
   return html;
 }
 
@@ -116,7 +111,6 @@ app.get('/api/search', async (req, res) => {
     const html = await readLimited(response);
     const results = [];
     const seen = new Set();
-
     const linkRegex = /<a[^>]+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi;
     let match;
     while ((match = linkRegex.exec(html)) && results.length < 30) {
@@ -133,7 +127,6 @@ app.get('/api/search', async (req, res) => {
       seen.add(href);
       results.push({ title: text.slice(0, 180), url: href, displayUrl: u.hostname + u.pathname });
     }
-
     res.json({ query: q, results });
   } catch (err) {
     res.status(502).json({ error: 'Search backend failed. Try again in a moment.' });
@@ -143,7 +136,6 @@ app.get('/api/search', async (req, res) => {
 app.get('/api/proxy', async (req, res) => {
   const raw = String(req.query.url || '').trim();
   if (!raw) return res.status(400).send('Missing URL.');
-
   try {
     const target = await safeUrl(raw);
     const response = await fetch(target.href, {
@@ -153,14 +145,12 @@ app.get('/api/proxy', async (req, res) => {
       },
       redirect: 'follow'
     });
-
     const finalTarget = await safeUrl(response.url);
     const type = response.headers.get('content-type') || '';
     if (!type.includes('text/html') && !type.includes('application/xhtml+xml')) {
       res.status(415).send('<!doctype html><body style="font-family:system-ui;padding:40px">Steller can currently render HTML pages here. This URL returned a non-HTML resource.</body>');
       return;
     }
-
     const html = rewritePage(await readLimited(response), finalTarget);
     res.status(response.status).set('Content-Type', 'text/html; charset=utf-8').send(html);
   } catch (err) {
@@ -168,6 +158,5 @@ app.get('/api/proxy', async (req, res) => {
   }
 });
 
-app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
-
+app.get(/.*/, (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 app.listen(PORT, () => console.log(`Steller running on port ${PORT}`));
